@@ -15,7 +15,7 @@ Access is scoped by an allowlist, so only the chats you name reach the model.
 
 10 tools. macOS only, because the database exists nowhere else.
 
-Built and maintained by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=readme&utm_campaign=imessage-mcp).
+Built and maintained by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=imessage-mcp&utm_content=readme).
 
 <img src="https://cdn.navid.media/repos/imessage-mcp.gif?v=2" alt="Claude Code using the iMessage MCP server" width="520">
 
@@ -421,7 +421,7 @@ Navid Moazzez is a leading AI business strategist, and the host of the AI Creato
 
 **Links**
 
-- Personal website: [navid.me](https://navid.me?utm_source=github&utm_medium=readme&utm_campaign=imessage-mcp)
+- Personal website: [navid.me](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=imessage-mcp&utm_content=readme)
 - YouTube: [@thenavidm](https://youtube.com/@thenavidm?sub_confirmation=1) and [@thenavidai](https://youtube.com/@thenavidai?sub_confirmation=1)
 - X: [@thenavidm](https://x.com/thenavidm)
 - Instagram: [@thenavidm](https://instagram.com/thenavidm)
@@ -448,4 +448,4 @@ Mac and uses no Apple service.
 
 ---
 
-© 2026 [NM Media](https://navid.media?utm_source=github&utm_medium=readme&utm_campaign=imessage-mcp). Made with ❤️ by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=readme&utm_campaign=imessage-mcp).
+© 2026 [NM Media](https://navid.media?utm_source=github&utm_medium=referral&utm_campaign=imessage-mcp&utm_content=readme). Made with ❤️ by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=imessage-mcp&utm_content=readme).
