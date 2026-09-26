@@ -1,24 +1,30 @@
 {
-  "name": "@thenavidm/imessage-mcp",
-  "version": "0.1.0",
-  "description": "iMessage MCP server for Claude Code and AI agents. A durable inbox, search, contacts, and sending with delivery confirmation, for Apple Messages on macOS.",
+  "name": "@thenavidm/imessage-mcp-cli",
+  "version": "0.2.0",
+  "description": "iMessage MCP server and CLI for Claude Code, Codex and AI agents on a Mac. 10 tools for an inbox that survives restarts, search across your full history, contact lookup, sending with delivery confirmation, and voice note transcription.",
   "type": "module",
   "bin": {
-    "imessage-mcp": "./src/server.ts"
+    "imessage-mcp": "dist/index.js",
+    "imessage-cli": "dist/index.js"
   },
   "scripts": {
-    "start": "bun run src/server.ts",
-    "doctor": "bun run src/doctor.ts",
-    "test": "bun test"
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "start": "node dist/index.js",
+    "doctor": "node dist/index.js doctor",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/node": "^22.20.4",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
   },
   "engines": {
-    "bun": ">=1.1.0"
+    "node": ">=22.13"
   },
   "license": "MIT",
   "keywords": [
@@ -26,17 +32,31 @@
     "mcp-server",
     "model-context-protocol",
     "imessage",
-    "apple-messages",
+    "messages",
     "macos",
+    "sms",
     "claude",
-    "ai-agents"
+    "claude-code",
+    "claude-desktop",
+    "ai-agents",
+    "typescript",
+    "cli",
+    "command-line-tool"
   ],
-  "author": "Navid Moazzez",
+  "author": "Navid Moazzez (https://navid.me)",
   "repository": {
     "type": "git",
-    "url": "https://github.com/thenavidm/imessage-mcp"
+    "url": "git+https://github.com/thenavidm/imessage-mcp-cli.git"
   },
-  "os": [
-    "darwin"
-  ]
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "SKILL.md",
+    "LICENSE"
+  ],
+  "homepage": "https://navid.me",
+  "bugs": {
+    "url": "https://github.com/thenavidm/imessage-mcp-cli/issues"
+  }
 }

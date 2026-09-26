@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import { decodeAttributedBody } from "../src/db.ts";
+import { describe, expect, test } from "vitest";
+import { decodeAttributedBody } from "../src/db.js";
 
 /**
  * Builds a minimal streamtyped payload of the shape Messages writes:

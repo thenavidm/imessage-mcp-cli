@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import { nameFor, findContacts, allContacts } from "../src/contacts.ts";
+import { describe, expect, test } from "vitest";
+import { nameFor, findContacts, allContacts } from "../src/contacts.js";
 
 /**
  * These run against the real Contacts database, which differs per machine, so

@@ -1,23 +1,62 @@
 <img src="https://cdn.navid.media/connectors/imessage-icon.png" alt="iMessage" width="88">
 
-# iMessage MCP
+# iMessage MCP Server & CLI
 
+[![npm](https://img.shields.io/npm/v/@thenavidm%2Fimessage-mcp-cli?color=orange&label=npm)](https://www.npmjs.com/package/@thenavidm/imessage-mcp-cli)
 [![License](https://img.shields.io/badge/License-MIT-green)](./LICENSE)
 [![YouTube](https://img.shields.io/badge/YouTube-@thenavidm-red?logo=youtube&logoColor=white)](https://youtube.com/@thenavidm?sub_confirmation=1)
 [![X](https://img.shields.io/badge/X-@thenavidm-black?logo=x)](https://x.com/thenavidm)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-thenavidm-0A66C2?logo=linkedin&logoColor=white)](https://linkedin.com/in/thenavidm)
 
+iMessage MCP server and CLI for Claude Code, Codex and AI agents on a Mac. 10 tools for an inbox that survives restarts, search across your full history, contact lookup, sending with delivery confirmation, and voice note transcription.
+
+One install gives you both surfaces, the same 10 tools under the same names, from the same server, so they cannot drift apart.
+
 It reads the Messages database already on your Mac. Nothing is uploaded anywhere.
 
 There is no account to connect and no API key. Full Disk Access is the whole setup.
 
-Access is scoped by an allowlist, so only the chats you name reach the model.
+It can read every conversation in that database, so connect it only to an AI app you trust with your messages.
 
 10 tools. macOS only, because the database exists nowhere else.
 
-Built and maintained by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=imessage-mcp&utm_content=readme).
+Built and maintained by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=imessage-mcp-cli&utm_content=readme).
 
 <img src="https://cdn.navid.media/repos/imessage-mcp.gif?v=2" alt="Claude Code using the iMessage MCP server" width="520">
+
+## Two ways to use it
+
+### Command line
+
+`imessage-cli` runs every tool as a command. Agents that run commands, like
+Claude Code, Codex and OpenCode, use it on their own, and you can type the same
+commands in a terminal, a script or a cron job:
+
+```bash
+imessage-cli                                        # every command, one line each
+imessage-cli inbox --peek                           # what arrived, without moving the cursor
+imessage-cli search-messages --query "invoice" --limit 10
+imessage-cli list-conversations --limit 5 --json --select name,lastAt
+imessage-cli resolve-contact --name "Sarah"
+imessage-cli <command> --help                       # what any command takes
+```
+
+`--json` gives JSON, `--compact` puts it on one line, `--select` keeps only the fields you name, and `--agent` turns on all of it for a script. Exit codes are 0 ok, 2 usage, 3 not found, 4 macOS refused access, 5 Messages failed, so a script branches on the number. `send-message` sends as soon as it runs, exactly as the MCP tool does.
+
+`imessage-cli schema <command>` prints the exact JSON Schema an MCP client
+receives for that tool.
+
+### MCP server, for AI agents
+
+`imessage-mcp` is what Claude Code, Claude Desktop, Cursor and the rest launch.
+You never run it by hand:
+
+```bash
+claude mcp add imessage -- npx -y @thenavidm/imessage-mcp-cli
+```
+
+In Claude Desktop, the [`.mcpb` extension](https://github.com/thenavidm/imessage-mcp-cli/releases/latest)
+installs on a double click. Section 4 has every other client.
 
 ## Contents
 
@@ -55,30 +94,39 @@ The first one is the point of this server. It answers from a cursor stored on di
 
 ## 2. Install
 
+You need macOS and Node 22.13 or newer. Nothing else.
+
 ```sh
-git clone https://github.com/thenavidm/imessage-mcp
-cd imessage-mcp
-bun install
+npx -y @thenavidm/imessage-mcp-cli --version
 ```
 
-You need [bun](https://bun.sh) and macOS. There is no Docker image and no hosted option, because the message database lives on your Mac and Apple publishes no server API.
+That is the whole install. `npx` fetches it on demand, so there is nothing to update later. For the CLI as a command you or your agent can run anywhere, install it once:
+
+```sh
+npm install -g @thenavidm/imessage-mcp-cli
+imessage-cli
+```
+
+There is no Docker image and no hosted option, because the message database lives on your Mac and Apple publishes no server API.
 
 ### Claude Code
 
 ```sh
-claude mcp add --transport stdio --scope user imessage -- bun run /absolute/path/to/imessage-mcp/src/server.ts
+claude mcp add --scope user imessage -- npx -y @thenavidm/imessage-mcp-cli
 ```
 
 ### Claude Desktop
 
-Settings, Developer, Edit Config:
+The short way: download the [`.mcpb` extension](https://github.com/thenavidm/imessage-mcp-cli/releases/latest) from the latest release and double-click it. It carries its own dependencies, so there is nothing to install first. Then give Claude Desktop Full Disk Access, section 3.
+
+The long way: Settings, Developer, Edit Config:
 
 ```json
 {
   "mcpServers": {
     "imessage": {
-      "command": "bun",
-      "args": ["run", "/absolute/path/to/imessage-mcp/src/server.ts"]
+      "command": "npx",
+      "args": ["-y", "@thenavidm/imessage-mcp-cli"]
     }
   }
 }
@@ -91,7 +139,7 @@ Same block, in that client's MCP config file.
 ### Check it worked
 
 ```sh
-bun run doctor
+npx -y @thenavidm/imessage-mcp-cli doctor
 ```
 
 ```
@@ -296,9 +344,9 @@ Your agent is a different matter. Anything a tool returns goes into that model's
 
 **A message looks cut off.** Not this server: it decodes both length formats and the test suite covers 127 through 70,000 bytes. If you see truncation, it is upstream of here.
 
-**Contacts show as raw numbers.** That person is not in Contacts, or the number differs beyond the last seven digits. `bun run doctor` reports how many contacts loaded.
+**Contacts show as raw numbers.** That person is not in Contacts, or the number differs beyond the last seven digits. `imessage-mcp doctor` reports how many contacts loaded.
 
-**Transcription fails.** `bun run doctor` names the configured provider and says what it is missing. ffmpeg is needed for every provider, not just `local`.
+**Transcription fails.** `imessage-mcp doctor` names the configured provider and says what it is missing. ffmpeg is needed for every provider, not just `local`.
 
 ## Environment variables
 
@@ -331,6 +379,20 @@ protocol.
 </details>
 
 <details>
+<summary><b>What is the CLI?</b></summary>
+
+`imessage-cli` is the same program as the MCP server, run as commands. AI agents that run commands, like Claude Code, Codex and OpenCode, use it on their own, and you can type the same commands in a terminal, a script or a cron job. Every tool is a command with dashes, so `search_messages` runs as `imessage-cli search-messages`.
+
+</details>
+
+<details>
+<summary><b>Should I use the MCP server or the CLI?</b></summary>
+
+Use the MCP server in an app with no terminal, like Claude Desktop's chat. Use the CLI anywhere commands run: an agent like Claude Code, Codex or OpenCode, a script or a cron job. The MCP server sends its full tool list to the model on every turn, and the CLI costs nothing until it runs.
+
+</details>
+
+<details>
 <summary><b>Does this send my messages to anyone?</b></summary>
 
 Nothing leaves your Mac. The server reads the local `chat.db` that Messages
@@ -352,18 +414,19 @@ server work, and without it every tool returns nothing.
 <details>
 <summary><b>Can it read every conversation I have?</b></summary>
 
-It reads only what the allowlist permits. Access is scoped to your self-chat,
-direct messages with handles you list, and groups you configure. Messages from
-anyone else still land in `chat.db`, and the scope keeps them out of results.
+Yes. It reads the whole Messages database on this Mac: every chat, groups
+included. There is no per-chat allowlist, so connect it only to an AI app you
+trust with your messages, and turn it off when you are done.
 
 </details>
 
 <details>
 <summary><b>Can it send messages as me?</b></summary>
 
-It can reply to chats you have allowed, and that is deliberately narrow.
-Sending reaches a real person who knows you, cannot be unsent, and is the one
-action here worth being careful with.
+Yes, to any phone number, email or chat, from your own account. Sending reaches
+a real person who knows you and cannot be unsent. It sends when asked, with no
+confirm step: SKILL.md tells the model to show you the recipient and the exact
+text first, which is guidance rather than a gate.
 
 </details>
 
@@ -413,7 +476,7 @@ System Settings under Privacy and Security. That cuts access completely.
 
 ## Questions
 
-Run into a problem or have a question? [Open an issue](https://github.com/thenavidm/imessage-mcp/issues) and I will help.
+Run into a problem or have a question? [Open an issue](https://github.com/thenavidm/imessage-mcp-cli/issues) and I will help.
 
 ## About the author
 
@@ -421,7 +484,7 @@ Navid Moazzez is a leading AI business strategist, and the host of the AI Creato
 
 **Links**
 
-- Personal website: [navid.me](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=imessage-mcp&utm_content=readme)
+- Personal website: [navid.me](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=imessage-mcp-cli&utm_content=readme)
 - YouTube: [@thenavidm](https://youtube.com/@thenavidm?sub_confirmation=1) and [@thenavidai](https://youtube.com/@thenavidai?sub_confirmation=1)
 - X: [@thenavidm](https://x.com/thenavidm)
 - Instagram: [@thenavidm](https://instagram.com/thenavidm)
@@ -434,7 +497,7 @@ If this is useful, star the repo and come say hi on [X](https://x.com/thenavidm)
 | Library | License | What it does |
 |---|---|---|
 | [TypeScript MCP SDK](https://github.com/modelcontextprotocol/typescript-sdk) | MIT | The MCP server and transport |
-| [bun:sqlite](https://bun.sh/docs/api/sqlite) | MIT | Built into Bun, which is why there are no native modules to compile |
+| [node:sqlite](https://nodejs.org/api/sqlite.html) | MIT | Built into Node 22.13 and newer, which is why there are no native modules to compile |
 | [ffmpeg](https://ffmpeg.org) | LGPL-2.1 | Converts Apple audio for any transcription provider, optional |
 | [whisper](https://github.com/openai/whisper) | MIT | Speech to text for the `local` provider, optional |
 
@@ -448,4 +511,4 @@ Mac and uses no Apple service.
 
 ---
 
-© 2026 [NM Media](https://navid.media?utm_source=github&utm_medium=referral&utm_campaign=imessage-mcp&utm_content=readme). Made with ❤️ by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=imessage-mcp&utm_content=readme).
+© 2026 [NM Media](https://navid.media?utm_source=github&utm_medium=referral&utm_campaign=imessage-mcp-cli&utm_content=readme). Made with ❤️ by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=imessage-mcp-cli&utm_content=readme).

@@ -1,4 +1,4 @@
-# Working on imessage-mcp
+# Working on imessage-mcp-cli
 
 For agents editing this repository. Users read the README. Driving the server is
 `SKILL.md`.
@@ -40,5 +40,5 @@ plainly rather than returning an empty result that looks like no messages.
 ## Before claiming it works
 
 ```bash
-bun test
+npm run typecheck && npm run build && npm test
 ```

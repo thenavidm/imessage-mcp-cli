@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -17,7 +17,8 @@ afterEach(() => {
 
 /** Imported fresh each time so STATE_DIR picks up the temp directory. */
 async function state() {
-  return await import(`../src/state.ts?${Math.random()}`);
+  vi.resetModules();
+  return await import("../src/state.js");
 }
 
 describe("cursor", () => {
@@ -49,13 +50,13 @@ describe("cursor", () => {
   });
 
   test("treats a corrupt state file as empty rather than throwing", async () => {
-    await Bun.write(join(dir, "state.json"), "{ not json");
+    writeFileSync(join(dir, "state.json"), "{ not json");
     const s = await state();
     expect(s.loadState().cursor).toBe(0);
   });
 
   test("rejects a negative cursor from a tampered file", async () => {
-    await Bun.write(join(dir, "state.json"), JSON.stringify({ cursor: -5 }));
+    writeFileSync(join(dir, "state.json"), JSON.stringify({ cursor: -5 }));
     const s = await state();
     expect(s.loadState().cursor).toBe(0);
   });

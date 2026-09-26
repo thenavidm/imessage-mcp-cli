@@ -1,4 +1,4 @@
-import { Database } from "bun:sqlite";
+import { Database } from "./sqlite.js";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -13,12 +13,14 @@ let db: Database | null = null;
 
 export function open(): Database {
   if (db) return db;
-  db = new Database(CHAT_DB, { readonly: true });
   // Fail loudly and early if Full Disk Access is missing, rather than on the
-  // first real query where the error reads like a corrupt database.
+  // first real query where the error reads like a corrupt database. Opening
+  // can fail the same way, so it sits inside the same check.
   try {
+    db = new Database(CHAT_DB, { readonly: true });
     db.query("SELECT ROWID FROM message LIMIT 1").get();
   } catch (err) {
+    db = null;
     throw new Error(
       `cannot read ${CHAT_DB}: ${err instanceof Error ? err.message : err}\n` +
         `Grant Full Disk Access to the app launching this server, then restart it.`,

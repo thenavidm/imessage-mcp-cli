@@ -1,3 +1,5 @@
+import { readFile, writeFile } from "node:fs/promises";
+import { run as spawnCapture } from "./proc.js";
 import { tmpdir } from "node:os";
 import { join, basename } from "node:path";
 import { existsSync } from "node:fs";
@@ -23,13 +25,8 @@ const WHISPER_MODEL = process.env.IMESSAGE_WHISPER_MODEL ?? "base";
 const GROQ_MODEL = process.env.GROQ_WHISPER_MODEL ?? "whisper-large-v3-turbo";
 
 async function run(cmd: string[]): Promise<{ ok: boolean; out: string; err: string }> {
-  const proc = Bun.spawn(cmd, { stdout: "pipe", stderr: "pipe" });
-  const [code, out, err] = await Promise.all([
-    proc.exited,
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-  ]);
-  return { ok: code === 0, out, err };
+  const { code, stdout, stderr } = await spawnCapture(cmd);
+  return { ok: code === 0, out: stdout, err: stderr };
 }
 
 export async function haveTool(bin: string): Promise<boolean> {
@@ -65,7 +62,7 @@ async function transcribeOpenAiCompatible(
   model: string,
 ): Promise<string> {
   const form = new FormData();
-  form.append("file", new Blob([await Bun.file(wav).arrayBuffer()]), basename(wav));
+  form.append("file", new Blob([await readFile(wav)]), basename(wav));
   form.append("model", model);
   form.append("response_format", "text");
 
@@ -76,7 +73,7 @@ async function transcribeOpenAiCompatible(
 
 async function transcribeElevenLabs(wav: string, key: string): Promise<string> {
   const form = new FormData();
-  form.append("file", new Blob([await Bun.file(wav).arrayBuffer()]), basename(wav));
+  form.append("file", new Blob([await readFile(wav)]), basename(wav));
   form.append("model_id", process.env.ELEVENLABS_STT_MODEL ?? "scribe_v1");
 
   const res = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
@@ -104,7 +101,7 @@ async function transcribeLocal(wav: string): Promise<string> {
 
   const txt = join(outDir, basename(wav).replace(/\.wav$/, ".txt"));
   try {
-    return (await Bun.file(txt).text()).trim();
+    return (await readFile(txt, "utf8")).trim();
   } catch {
     return tr.out.trim(); // Older builds print to stdout instead of writing a file.
   }
@@ -170,7 +167,7 @@ export async function speak(text: string, opts: SpeakOptions = {}): Promise<stri
 
   const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const mp3 = join(tmpdir(), `imessage-mcp-tts-${stamp}.mp3`);
-  await Bun.write(mp3, await res.arrayBuffer());
+  await writeFile(mp3, Buffer.from(await res.arrayBuffer()));
 
   if (!(await haveTool("ffmpeg"))) return mp3;
   const m4a = join(tmpdir(), `imessage-mcp-tts-${stamp}.m4a`);

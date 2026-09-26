@@ -1,4 +1,5 @@
-import { open, appleToDate } from "./db.ts";
+import { run, sleep } from "./proc.js";
+import { open, appleToDate } from "./db.js";
 
 export type SendResult = {
   ok: boolean;
@@ -46,12 +47,8 @@ const FILE_SCRIPT = `on run argv
 end run`;
 
 async function osascript(script: string, args: string[]): Promise<string | null> {
-  const proc = Bun.spawn(["osascript", "-e", script, "--", ...args], {
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-  const [code, err] = await Promise.all([proc.exited, new Response(proc.stderr).text()]);
-  return code === 0 ? null : err.trim() || `osascript exited ${code}`;
+  const { code, stderr } = await run(["osascript", "-e", script, "--", ...args]);
+  return code === 0 ? null : stderr.trim() || `osascript exited ${code}`;
 }
 
 /**
@@ -88,7 +85,7 @@ async function confirm(sentAfter: number, timeoutMs = 6000): Promise<SendResult>
         };
       }
     }
-    await Bun.sleep(250);
+    await sleep(250);
   }
 
   return last

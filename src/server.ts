@@ -1,17 +1,15 @@
-#!/usr/bin/env bun
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
-import { open, CHAT_DB } from "./db.ts";
-import { search, listConversations, attachmentsFor, render, type Rendered } from "./query.ts";
-import { findContacts, nameFor, allContacts } from "./contacts.ts";
-import { sendText, sendFile } from "./send.ts";
-import { transcribe, speak, haveTool, provider, transcriptionReady, PROVIDERS, type Provider } from "./voice.ts";
-import { loadState, saveState, advanceCursor, STATE_DIR } from "./state.ts";
-import { SELECT_MESSAGE, type MessageRow } from "./db.ts";
+import { open, CHAT_DB } from "./db.js";
+import { search, listConversations, attachmentsFor, render, type Rendered } from "./query.js";
+import { findContacts, nameFor, allContacts } from "./contacts.js";
+import { sendText, sendFile } from "./send.js";
+import { transcribe, speak, haveTool, provider, transcriptionReady, PROVIDERS, type Provider } from "./voice.js";
+import { loadState, saveState, advanceCursor, STATE_DIR } from "./state.js";
+import { SELECT_MESSAGE, type MessageRow } from "./db.js";
 
-const VERSION = "0.1.0";
+export const VERSION = "0.2.0";
 
 const text = (s: string) => ({ content: [{ type: "text" as const, text: s }] });
 const json = (v: unknown) => text(JSON.stringify(v, null, 2));
@@ -22,13 +20,37 @@ function line(m: Rendered): string {
   return `[${m.rowid}] ${when}  ${m.from} → ${m.chat}${att}\n    ${m.text || "(no text)"}`;
 }
 
+/**
+ * What each tool does to the world, so an MCP app can show it before a call
+ * and the CLI can mark it. Sending cannot be recalled. `inbox` moves its own
+ * cursor on disk, which is a write to this machine, not to anyone else.
+ */
+const ANNOTATIONS: Record<string, { readOnlyHint: boolean; destructiveHint?: boolean; openWorldHint: boolean }> = {
+  inbox: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  search_messages: { readOnlyHint: true, openWorldHint: false },
+  list_conversations: { readOnlyHint: true, openWorldHint: false },
+  get_conversation: { readOnlyHint: true, openWorldHint: false },
+  resolve_contact: { readOnlyHint: true, openWorldHint: false },
+  send_message: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
+  send_file: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
+  transcribe_voice_note: { readOnlyHint: true, openWorldHint: true },
+  speak: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+  server_status: { readOnlyHint: true, openWorldHint: false },
+};
+
+function annotate<T extends { name: string }>(tools: T[]): (T & { annotations?: object })[] {
+  return tools.map((tool) => (ANNOTATIONS[tool.name] ? { ...tool, annotations: ANNOTATIONS[tool.name] } : tool));
+}
+
+/** The server, with every tool registered. The entry point connects a transport. */
+export function buildServer(): Server {
 const server = new Server(
   { name: "imessage-mcp", version: VERSION },
   { capabilities: { tools: {} } },
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [
+  tools: annotate([
     {
       name: "inbox",
       description:
@@ -152,7 +174,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description: "Database reachability, cursor position, contact count, and which optional tools are installed.",
       inputSchema: { type: "object", properties: {} },
     },
-  ],
+  ]),
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async req => {
@@ -287,5 +309,5 @@ server.setRequestHandler(CallToolRequestSchema, async req => {
   }
 });
 
-await server.connect(new StdioServerTransport());
-process.stderr.write(`imessage-mcp ${VERSION} ready (db: ${CHAT_DB})\n`);
+return server;
+}

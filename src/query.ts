@@ -1,5 +1,5 @@
-import { open, SELECT_MESSAGE, bodyOf, appleToDate, dateToApple, type MessageRow } from "./db.ts";
-import { nameFor } from "./contacts.ts";
+import { open, SELECT_MESSAGE, bodyOf, appleToDate, dateToApple, type MessageRow } from "./db.js";
+import { nameFor } from "./contacts.js";
 
 export type Rendered = {
   rowid: number;

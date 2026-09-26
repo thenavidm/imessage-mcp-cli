@@ -1,10 +1,24 @@
-# iMessage MCP changelog
+# iMessage MCP Server & CLI changelog
 
 | Component | Version | Last Updated |
 |-----------|---------|--------------|
-| imessage-mcp | 0.1.0 | 2026-08-31 |
+| imessage-mcp-cli | 0.2.0 | 2026-09-26 |
 
 ---
+
+## 0.2.0
+
+**Runs on Node, and ships on npm.** 0.1.0 needed Bun and a git clone. The Bun calls are replaced: `bun:sqlite` by a small shim over Node's built-in `node:sqlite` that keeps every query as it was, and the process and file calls by their Node equivalents. Messages stores dates as nanoseconds since 2001, beyond JavaScript's safe integers: `node:sqlite` refuses those unless it reads BigInts, so the shim reads BigInts and rounds them the way Bun did. Checked against the original on a real library: the conversation list, a search and a conversation come back byte-identical. Node 22.13 or newer.
+
+**A CLI.** `imessage-cli` runs every tool as a shell command, through the same server over the SDK's in-memory transport.
+
+**Tool annotations.** Every tool now says whether it reads, writes or cannot be undone, so an app can show it before a call. Otherwise the tool list is unchanged.
+
+**Full Disk Access is reported when opening fails too**, not only when the first query does.
+
+**The README no longer describes an allowlist.** This server has none: it reads every conversation in the database. The earlier text described a different tool.
+
+**A Claude Desktop extension**, attached to each release.
 
 ## 0.1.0
 

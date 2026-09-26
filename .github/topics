@@ -11,10 +11,10 @@ cursor
 windsurf
 anthropic
 ai-agents
-llm-tools
 typescript
-bun
 sqlite
 applescript
 whisper
 elevenlabs
+cli
+command-line-tool

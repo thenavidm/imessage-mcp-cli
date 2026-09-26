@@ -1,4 +1,4 @@
-import { Database } from "bun:sqlite";
+import { Database } from "./sqlite.js";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { globSync } from "node:fs";

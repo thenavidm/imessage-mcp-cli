@@ -1,0 +1,48 @@
+{
+  "manifest_version": "0.2",
+  "name": "imessage",
+  "display_name": "iMessage",
+  "version": "0.2.0",
+  "description": "iMessage MCP server and CLI for Claude Code, Codex and AI agents on a Mac. 10 tools for an inbox that survives restarts, search across your full history, contact lookup, sending with delivery confirmation, and voice note transcription.",
+  "long_description": "Reads the Messages database already on your Mac and sends through the Messages app. Nothing is uploaded anywhere, and there is no account or key.\n\nClaude Desktop needs Full Disk Access to read ~/Library/Messages/chat.db: System Settings, Privacy & Security, Full Disk Access, add Claude, then quit and reopen it. The first send asks for permission to control Messages.\n\nIt can read every conversation in the database, and sending reaches real people from your own account and cannot be unsent.",
+  "author": {
+    "name": "Navid Moazzez",
+    "url": "https://navid.me"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thenavidm/imessage-mcp-cli"
+  },
+  "homepage": "https://github.com/thenavidm/imessage-mcp-cli",
+  "documentation": "https://github.com/thenavidm/imessage-mcp-cli#readme",
+  "support": "https://github.com/thenavidm/imessage-mcp-cli/issues",
+  "license": "MIT",
+  "keywords": [
+    "imessage",
+    "messages",
+    "macos",
+    "sms",
+    "mcp"
+  ],
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/server/index.js"
+      ],
+      "env": {}
+    }
+  },
+  "user_config": {},
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": [
+      "darwin"
+    ],
+    "runtimes": {
+      "node": ">=22.13"
+    }
+  }
+}

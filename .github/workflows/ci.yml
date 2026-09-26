@@ -1,23 +1,27 @@
-name: ci
+name: CI
 
 on:
   push:
     branches: [main]
   pull_request:
 
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   test:
-    # chat.db and AppleScript are macOS-only, so CI runs where the code runs.
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
         with:
-          bun-version: latest
-      - run: bun install --frozen-lockfile
-      - run: bun test
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+      - name: The CLI lists every tool
+        run: |
+          ln -s "$PWD/dist/index.js" imessage-cli
+          node imessage-cli | grep -q "imessage-cli commands (10)"

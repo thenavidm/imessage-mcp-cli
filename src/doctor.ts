@@ -1,9 +1,10 @@
-#!/usr/bin/env bun
-import { open, CHAT_DB } from "./db.ts";
-import { allContacts } from "./contacts.ts";
-import { haveTool, provider, transcriptionReady } from "./voice.ts";
-import { loadState, STATE_DIR } from "./state.ts";
+import { open, CHAT_DB } from "./db.js";
+import { allContacts } from "./contacts.js";
+import { haveTool, provider, transcriptionReady } from "./voice.js";
+import { loadState, STATE_DIR } from "./state.js";
 
+/** Check every part of the setup and say what is missing. Exit code 0 when the database reads. */
+export async function runDoctor(): Promise<number> {
 const tick = (b: boolean) => (b ? "ok  " : "MISS");
 
 console.log(`imessage-mcp doctor\n`);
@@ -48,4 +49,6 @@ if (!dbOk) {
     `\nFull Disk Access is the usual cause. System Settings, Privacy & Security,` +
       ` Full Disk Access. Add the app launching this, then restart it.`,
   );
+}
+  return dbOk ? 0 : 1;
 }
