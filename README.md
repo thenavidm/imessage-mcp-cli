@@ -68,7 +68,7 @@ difference is when the model pays for them. Measured in Claude Code:
 | Every message, with every tool loaded | 1,600 tokens | nothing |
 | Every message, Claude Code's default | 110 tokens | nothing |
 | When iMessage comes up | nothing more, or the tools it picks | 2,100 tokens for `SKILL.md`, once |
-| 20 messages with iMessage in 1, every tool loaded | 32,000 tokens | 2,100 tokens |
+| 20 messages with iMessage in 1, every tool loaded | 33,000 tokens | 2,100 tokens |
 
 Claude Code's [tool search](https://code.claude.com/docs/en/mcp#scale-with-mcp-tool-search)
 is on by default: it sends only the tool names and the server instructions,
