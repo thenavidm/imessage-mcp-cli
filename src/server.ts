@@ -7,9 +7,10 @@ import { findContacts, nameFor, allContacts } from "./contacts.js";
 import { sendText, sendFile } from "./send.js";
 import { transcribe, speak, haveTool, provider, transcriptionReady, PROVIDERS, type Provider } from "./voice.js";
 import { loadState, saveState, advanceCursor, STATE_DIR } from "./state.js";
+import { SENDING_TOOLS, readOnly, audit, needsConfirm } from "./safety.js";
 import { SELECT_MESSAGE, type MessageRow } from "./db.js";
 
-export const VERSION = "0.2.0";
+export const VERSION = "0.3.0";
 
 const text = (s: string) => ({ content: [{ type: "text" as const, text: s }] });
 const json = (v: unknown) => text(JSON.stringify(v, null, 2));
@@ -22,8 +23,9 @@ function line(m: Rendered): string {
 
 /**
  * What each tool does to the world, so an MCP app can show it before a call
- * and the CLI can mark it. Sending cannot be recalled. `inbox` moves its own
- * cursor on disk, which is a write to this machine, not to anyone else.
+ * and the CLI can mark it. Sending cannot be recalled, and `speak` sends when
+ * it is given a recipient. `inbox` moves its own cursor on disk, which is a
+ * write to this machine, not to anyone else.
  */
 const ANNOTATIONS: Record<string, { readOnlyHint: boolean; destructiveHint?: boolean; openWorldHint: boolean }> = {
   inbox: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
@@ -34,7 +36,7 @@ const ANNOTATIONS: Record<string, { readOnlyHint: boolean; destructiveHint?: boo
   send_message: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
   send_file: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
   transcribe_voice_note: { readOnlyHint: true, openWorldHint: true },
-  speak: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+  speak: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
   server_status: { readOnlyHint: true, openWorldHint: false },
 };
 
@@ -122,6 +124,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           to: { type: "string", description: "Handle (+46...), email, or chat GUID." },
           text: { type: "string" },
+          confirm: { type: "boolean", description: "Must be true. A sent message can't be unsent, so pass it only when the person asked for this exact message." },
         },
         required: ["to", "text"],
       },
@@ -134,6 +137,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           to: { type: "string" },
           path: { type: "string", description: "Absolute path." },
+          confirm: { type: "boolean", description: "Must be true. A sent message can't be unsent, so pass it only when the person asked for this exact message." },
         },
         required: ["to", "path"],
       },
@@ -165,6 +169,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           text: { type: "string" },
           to: { type: "string", description: "Optional. If given, the audio is sent to this handle or chat." },
           voiceId: { type: "string", description: "Overrides ELEVENLABS_VOICE_ID." },
+          confirm: { type: "boolean", description: "Must be true when `to` is given, because the audio is then sent and can't be unsent." },
         },
         required: ["text"],
       },
@@ -174,14 +179,32 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
       description: "Database reachability, cursor position, contact count, and which optional tools are installed.",
       inputSchema: { type: "object", properties: {} },
     },
-  ]),
+  ]).filter((tool) => !(readOnly() && SENDING_TOOLS.has(tool.name))),
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async req => {
   const a = (req.params.arguments ?? {}) as Record<string, any>;
+  const name = req.params.name;
+
+  // The guard, before anything is sent. `speak` with no recipient only makes a file.
+  const sends = SENDING_TOOLS.has(name) && (name !== "speak" || Boolean(a.to));
+  if (SENDING_TOOLS.has(name) && readOnly()) {
+    audit(name, a.to, "blocked: read-only");
+    return { ...text(`IMESSAGE_READ_ONLY is on, so ${name} is unavailable. Nothing was sent.`), isError: true };
+  }
+  if (sends && a.confirm !== true) {
+    audit(name, a.to, "blocked: no confirm", typeof a.text === "string" ? a.text.length : undefined);
+    const known = nameFor(a.to);
+    const who = known === a.to ? String(a.to) : `${known} (${a.to})`;
+    const what =
+      name === "send_message" ? `send "${String(a.text ?? "").slice(0, 120)}" to ${who}`
+      : name === "send_file" ? `send the file ${a.path} to ${who}`
+      : `speak "${String(a.text ?? "").slice(0, 120)}" and send the audio to ${who}`;
+    return { ...text(needsConfirm(name, what)), isError: true };
+  }
 
   try {
-    switch (req.params.name) {
+    switch (name) {
       case "inbox": {
         const state = loadState();
         const db = open();
@@ -252,11 +275,13 @@ server.setRequestHandler(CallToolRequestSchema, async req => {
 
       case "send_message": {
         const r = await sendText(a.to, a.text);
+        audit(name, a.to, r.ok ? "sent" : "failed", String(a.text ?? "").length);
         return text(r.ok ? `Sent to ${nameFor(a.to)} (${r.detail}).` : `Send failed: ${r.detail}`);
       }
 
       case "send_file": {
         const r = await sendFile(a.to, a.path);
+        audit(name, a.to, r.ok ? "sent" : "failed");
         return text(r.ok ? `File sent to ${nameFor(a.to)} (${r.detail}).` : `Send failed: ${r.detail}`);
       }
 
@@ -280,6 +305,7 @@ server.setRequestHandler(CallToolRequestSchema, async req => {
         const file = await speak(a.text, { voiceId: a.voiceId });
         if (!a.to) return text(`Audio written to ${file}`);
         const r = await sendFile(a.to, file);
+        audit(name, a.to, r.ok ? "sent" : "failed", String(a.text ?? "").length);
         return text(r.ok ? `Voice message sent to ${nameFor(a.to)} (${r.detail}). File: ${file}` : `Send failed: ${r.detail}`);
       }
 

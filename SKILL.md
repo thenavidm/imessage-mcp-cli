@@ -119,9 +119,14 @@ than picking. When it returns more than one handle for one person, ask which
 number unless the user already said.
 
 **Confirm before sending on the user's behalf.** These messages go to real
-people from the user's own account and cannot be unsent. Show the recipient and
-the exact text and get a yes, unless the user has already told you to send this
-specific message.
+people from the user's own account and cannot be unsent. `send_message`,
+`send_file` and `speak` with a recipient refuse without `confirm: true`
+(`--confirm` on the CLI), and the refusal names the recipient and the text. Show
+the user exactly that and get a yes, unless they already told you to send this
+specific message. Never pass `confirm` just to get past the refusal.
+
+When `IMESSAGE_READ_ONLY=1` is set, the sending tools are not there at all. Say
+so rather than looking for another way to send.
 
 `send_message` waits for Messages to confirm and reports the error code when
 delivery fails, so treat its response as the source of truth rather than

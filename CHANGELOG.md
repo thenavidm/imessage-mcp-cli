@@ -2,9 +2,19 @@
 
 | Component | Version | Last Updated |
 |-----------|---------|--------------|
-| imessage-mcp-cli | 0.2.0 | 2026-09-26 |
+| imessage-mcp-cli | 0.3.0 | 2026-09-27 |
 
 ---
+
+## 0.3.0
+
+**Every send asks first.** `send_message`, `send_file` and `speak` with a recipient refuse to run without `confirm: true`, and the refusal names the recipient and the text, so an agent can show you what would go. Before this, sending relied on SKILL.md telling the model to check with you, which is guidance rather than a gate. The CLI says `--confirm`.
+
+**`IMESSAGE_READ_ONLY=1`** takes the 3 sending tools off the list. Reading and the inbox still work.
+
+**`IMESSAGE_AUDIT_LOG`** records every send attempt, allowed or blocked, as one JSON line with the recipient and the length, never the words.
+
+**The README's sections are numbered 1 to 11** again, with no gap before Troubleshooting.
 
 ## 0.2.0
 

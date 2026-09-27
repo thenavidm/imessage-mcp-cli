@@ -441,7 +441,8 @@ export async function runCli(argv: string[]): Promise<number> {
 
     if (result.isError) {
       const message = textOf(result);
-      emitError(message);
+      // The server words a refusal for an AI. In a terminal the switch is --confirm.
+      emitError(message.replace(/\bconfirm: true\b/g, "--confirm"));
       return exitCodeFor(message);
     }
 
