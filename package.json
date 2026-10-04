@@ -1,11 +1,12 @@
 {
   "name": "@thenavidm/imessage-mcp-cli",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "iMessage MCP server and CLI for Claude Code, Codex and AI agents on a Mac. 10 tools for an inbox that survives restarts, search across your full history, contact lookup, sending with delivery confirmation, and voice note transcription.",
   "type": "module",
   "bin": {
     "imessage-mcp": "dist/index.js",
-    "imessage-cli": "dist/index.js"
+    "imessage-cli": "dist/index.js",
+    "imessage-mcp-cli": "dist/npx.js"
   },
   "scripts": {
     "build": "tsc",

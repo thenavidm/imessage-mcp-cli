@@ -2,9 +2,13 @@
 
 | Component | Version | Last Updated |
 |-----------|---------|--------------|
-| imessage-mcp-cli | 0.3.0 | 2026-09-27 |
+| imessage-mcp-cli | 0.3.1 | 2026-10-04 |
 
 ---
+
+## 0.3.1, 2026-10-04
+
+- **`npx -y @thenavidm/imessage-mcp-cli` always starts the MCP server.** npx starts whichever binary the npm registry lists first when they share one file, and the registry does not keep the published order, so an MCP client set up with this README's install line could get `imessage-cli` and its command list instead of a server. A third binary named after the package now always starts the server, and npx picks it by name.
 
 ## 0.3.0
 

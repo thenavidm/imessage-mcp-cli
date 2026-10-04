@@ -10,7 +10,7 @@ import { loadState, saveState, advanceCursor, STATE_DIR } from "./state.js";
 import { SENDING_TOOLS, readOnly, audit, needsConfirm } from "./safety.js";
 import { SELECT_MESSAGE, type MessageRow } from "./db.js";
 
-export const VERSION = "0.3.0";
+export const VERSION = "0.3.1";
 
 const text = (s: string) => ({ content: [{ type: "text" as const, text: s }] });
 const json = (v: unknown) => text(JSON.stringify(v, null, 2));
