@@ -1,81 +1,27 @@
 #!/usr/bin/env node
 /**
- * Entry point.
+ * Both binaries. `imessage-mcp` with no arguments serves MCP over stdio, and
+ * any command runs one tool from the shell. The server must stay silent on
+ * stdout, which is the protocol channel.
  *
- * `imessage-mcp`          stdio, which is what MCP clients launch
- * `imessage-mcp doctor`   check Full Disk Access, contacts and the voice tools
- * `imessage-cli`          every tool as a shell command
- *
- * One entry point, two programs. `imessage-mcp` is the server and must stay
- * silent on stdout, which is the protocol channel. The CLI is picked by the
- * name it was invoked as, or by a first argument that names a tool.
+ * Node's compile cache goes on before the app loads, so every launch after the
+ * first skips compiling it again. NODE_DISABLE_COMPILE_CACHE=1 turns it off.
  */
 
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import * as nodeModule from "node:module";
 
-import { isCliCommand, runCli, toolNames } from "./cli.js";
-import { CHAT_DB } from "./db.js";
-import { buildServer, VERSION } from "./server.js";
+nodeModule.enableCompileCache?.();
 
-const HELP = `imessage-mcp ${VERSION}
-
-  imessage-mcp                     run over stdio (what an MCP client does)
-  imessage-mcp doctor              check Full Disk Access, contacts and the voice tools
-  imessage-mcp --version           print the version
-  imessage-cli                     every tool as a shell command
-  imessage-cli <command> --help    what one command takes
-
-Mac only. The app that runs it needs Full Disk Access to read
-~/Library/Messages/chat.db. Sending asks Messages through AppleScript, so the
-first send also asks for Automation permission.
-
-Optional:
-  IMESSAGE_DB                   another chat.db, for testing
-  IMESSAGE_TRANSCRIBE           voice note transcription: groq (default), local, openai or elevenlabs
-  GROQ_API_KEY / OPENAI_API_KEY / ELEVENLABS_API_KEY   for that provider
-  ELEVENLABS_VOICE_ID           the voice speak uses
-`;
-
-/** Invoked as the CLI binary rather than the server one. */
-function invokedAsCli(): boolean {
-  const name = (process.argv[1] ?? "").split("/").pop() ?? "";
-  return name.startsWith("imessage-cli");
+// Over HTTP this server hands out messages it reads with Full Disk Access, to
+// any program that can reach the port, which on this Mac includes programs
+// without that access. So it refuses HTTP without a bearer token, even on
+// 127.0.0.1, where Slipway would otherwise allow it.
+if (process.argv.includes("--http") && !process.env.IMESSAGE_HTTP_TOKEN?.trim()) {
+  process.stderr.write(
+    "IMESSAGE_HTTP_TOKEN is not set. Over HTTP this server reads your messages for any program that can reach the port, so it refuses to start without a bearer token. Generate one with: openssl rand -hex 32\n",
+  );
+  process.exit(10);
 }
 
-async function main(): Promise<void> {
-  const argv = process.argv.slice(2);
-  const command = argv[0];
-
-  // The CLI: every tool as a command, from the same server an MCP app talks
-  // to. Checked first so `<tool> --help` reaches the tool.
-  const cli =
-    command !== undefined && !command.startsWith("-") && command !== "doctor" && command !== "help"
-      ? invokedAsCli() || isCliCommand(argv, await toolNames())
-      : invokedAsCli() && argv.length === 0;
-  if (cli) {
-    process.exitCode = await runCli(argv.length ? argv : ["tools"]);
-    return;
-  }
-
-  if (argv.includes("--help") || argv.includes("-h") || command === "help") {
-    process.stdout.write(HELP);
-    return;
-  }
-  if (argv.includes("--version") || argv.includes("-v")) {
-    process.stdout.write(`${VERSION}\n`);
-    return;
-  }
-  if (command === "doctor") {
-    const { runDoctor } = await import("./doctor.js");
-    process.exitCode = await runDoctor();
-    return;
-  }
-
-  await buildServer().connect(new StdioServerTransport());
-  process.stderr.write(`imessage-mcp ${VERSION} ready (db: ${CHAT_DB})\n`);
-}
-
-main().catch((error: unknown) => {
-  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
-  process.exit(1);
-});
+const { app } = await import("./app.js");
+await app.main();

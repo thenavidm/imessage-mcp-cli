@@ -24,4 +24,4 @@ jobs:
       - name: The CLI lists every tool
         run: |
           ln -s "$PWD/dist/index.js" imessage-cli
-          node imessage-cli | grep -q "imessage-cli commands (10)"
+          node imessage-cli | grep -q "10 commands"
